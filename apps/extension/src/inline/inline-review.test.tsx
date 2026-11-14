@@ -12,6 +12,7 @@ const backend = createMemoryBackend({
   "docs/a.md": { base: "Alpha version one.\n", head: "Alpha version two.\n" },
   "docs/b.md": { base: "Bravo.\n", head: "Bravo changed.\n" },
 });
+const repository = { owner: "acme", repo: "app" };
 
 let stop: (() => void) | null = null;
 
@@ -25,6 +26,7 @@ afterEach(() => {
 async function start(reviewBackend: ReviewBackend = backend, initialLayout: DiffLayout = "split") {
   const started = await startInlineReview({
     document,
+    repository,
     backend: reviewBackend,
     cssText: "",
     locale: "ja",
@@ -136,6 +138,7 @@ describe("startInlineReview", () => {
 
     const started = await startInlineReview({
       document,
+      repository,
       backend: offline,
       cssText: "",
       locale: "ja",
@@ -162,6 +165,7 @@ describe("startInlineReview", () => {
     let changeLocale = (_locale: "ja" | "en") => {};
     const started = await startInlineReview({
       document,
+      repository,
       backend,
       cssText: "",
       locale: "ja",
@@ -203,6 +207,29 @@ describe("startInlineReview", () => {
       expect(viewRoot(container)?.querySelector("img")?.getAttribute("src")).toBe(
         "https://camo.githubusercontent.com/p",
       ),
+    );
+  });
+
+  it("loads a relative image from the repository, at the commit of each side", async () => {
+    const withImage = createMemoryBackend({
+      "docs/a.md": {
+        base: "![figure](./figure.png)\n",
+        head: "![figure](./figure.png)\n\nAdded.\n",
+      },
+    });
+    const container = await appendFileBlock(document, "docs/a.md");
+    await start(withImage);
+    showRichDiff(container, true);
+
+    await waitFor(() =>
+      expect(
+        Array.from(viewRoot(container)?.querySelectorAll("img") ?? [], (image) =>
+          image.getAttribute("src"),
+        ),
+      ).toEqual([
+        `https://github.com/acme/app/raw/${"0".repeat(40)}/docs/figure.png`,
+        `https://github.com/acme/app/raw/${"1".repeat(40)}/docs/figure.png`,
+      ]),
     );
   });
 
@@ -334,6 +361,7 @@ describe("startInlineReview", () => {
       const container = await appendFileBlock(document, "docs/a.md");
       const started = await startInlineReview({
         document,
+        repository,
         backend,
         cssText: "",
         hostSync,

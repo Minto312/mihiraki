@@ -1,10 +1,15 @@
-import type { LineRange } from "@mihiraki/core";
+import type { LineRange, Side } from "@mihiraki/core";
 import type { ComponentChild } from "preact";
 import { createPortal } from "preact/compat";
 import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useDiagram } from "../diagrams/diagrams";
 import { useMessages } from "../i18n/i18n";
-import { HELD_IMAGE_ATTR, holdImages, useImagePolicy } from "../safe-html/images";
+import {
+  HELD_IMAGE_ATTR,
+  holdImages,
+  useDocumentVersions,
+  useImagePolicy,
+} from "../safe-html/images";
 import { SafeHtml } from "../safe-html/SafeHtml";
 import { type SanitizedHtml, sanitizeHtml } from "../safe-html/sanitize";
 import { insertSlotBelow, lineElementAt, markSelectedElements, readLines } from "./rendered-dom";
@@ -16,6 +21,8 @@ interface HoveredElement {
 
 interface RenderedBlockProps {
   readonly html: string;
+  /** The version of the file the block was rendered from. */
+  readonly side: Side;
   /** A diagram block, drawn by the host's renderer when there is one. */
   readonly isDiagram: boolean;
   /** Only the most recently hovered block shows its button, since mouseleave is not guaranteed. */
@@ -80,6 +87,7 @@ function AddCommentButton({ hovered, onSelectionStart, onRequestComment }: AddCo
 export function RenderedBlock(props: RenderedBlockProps) {
   const {
     html,
+    side,
     isDiagram,
     isActive,
     onActivate,
@@ -95,10 +103,11 @@ export function RenderedBlock(props: RenderedBlockProps) {
   const [hovered, setHovered] = useState<HoveredElement | null>(null);
   const t = useMessages();
   const imagePolicy = useImagePolicy();
+  const version = useDocumentVersions()?.[side] ?? null;
   const safeHtml = useMemo(() => {
     const clean = sanitizeHtml(html);
-    return imagePolicy ? holdImages(clean, imagePolicy, t.showExternalImage) : clean;
-  }, [html, imagePolicy, t]);
+    return imagePolicy ? holdImages(clean, imagePolicy, t.showExternalImage, version) : clean;
+  }, [html, imagePolicy, t, version]);
   const slot = useFormSlot(contentRef, safeHtml, formAfterLines);
   useDiagram(contentRef, safeHtml, isDiagram);
 

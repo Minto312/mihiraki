@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { commitId } from "@mihiraki/core";
+import { describe, expect, it, vi } from "vitest";
 import { holdImages } from "./images";
 import { sanitizeHtml } from "./sanitize";
 
@@ -14,7 +15,12 @@ describe("holdImages", () => {
   it("loads an image from the URL the host gives for it", () => {
     const html = sanitizeHtml('<p><img src="https://ex.com/a.png" alt="A"></p>');
     const out = parse(
-      holdImages(html, { resolve: () => "https://camo.example/a", allowed: new Set() }, label),
+      holdImages(
+        html,
+        { resolve: () => "https://camo.example/a", allowed: new Set() },
+        label,
+        null,
+      ),
     );
 
     expect(out.content.querySelector("img")?.getAttribute("src")).toBe("https://camo.example/a");
@@ -22,7 +28,7 @@ describe("holdImages", () => {
 
   it("holds an image back behind a button naming its site when the host gives no URL", () => {
     const html = sanitizeHtml('<p><img src="https://tracker.example/pixel.png" alt="pixel"></p>');
-    const out = parse(holdImages(html, { resolve: () => null, allowed: new Set() }, label));
+    const out = parse(holdImages(html, { resolve: () => null, allowed: new Set() }, label, null));
 
     expect(out.content.querySelector("img")).toBeNull();
     const button = out.content.querySelector("button");
@@ -33,14 +39,25 @@ describe("holdImages", () => {
   it("loads an image the reviewer asked for as written", () => {
     const src = "https://tracker.example/pixel.png";
     const html = sanitizeHtml(`<img src="${src}">`);
-    const out = parse(holdImages(html, { resolve: () => null, allowed: new Set([src]) }, label));
+    const out = parse(
+      holdImages(html, { resolve: () => null, allowed: new Set([src]) }, label, null),
+    );
 
     expect(out.content.querySelector("img")?.getAttribute("src")).toBe(src);
   });
 
+  it("tells the host which version of the file the image is in", () => {
+    const version = { commit: commitId("a".repeat(40)), path: "docs/a.md" };
+    const resolve = vi.fn(() => "https://host.example/figure.png");
+    const html = sanitizeHtml('<img src="./figure.png">');
+    holdImages(html, { resolve, allowed: new Set() }, label, version);
+
+    expect(resolve).toHaveBeenCalledWith("./figure.png", version);
+  });
+
   it("drops srcset, which would load other images past the policy", () => {
     const html = sanitizeHtml('<img src="https://ex.com/a.png" srcset="https://ex.com/a2.png 2x">');
-    const out = parse(holdImages(html, { resolve: (src) => src, allowed: new Set() }, label));
+    const out = parse(holdImages(html, { resolve: (src) => src, allowed: new Set() }, label, null));
 
     expect(out.content.querySelector("img")?.hasAttribute("srcset")).toBe(false);
   });

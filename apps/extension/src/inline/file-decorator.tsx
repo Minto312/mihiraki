@@ -15,12 +15,14 @@ import {
   setRenderedViewActive,
   viewSlotOf,
 } from "./github-file-dom";
-import { githubImageSource, imageKeyOf } from "./github-images";
+import { githubImageSource, imageKeyOf, type Repository } from "./github-images";
 import { INLINE_MESSAGES } from "./messages";
 import { createShadowHost, type ShadowHost } from "./shadow-host";
 
 export interface FileDecoratorContext {
   readonly document: Document;
+  /** The repository of the pull request, which relative image paths point into. */
+  readonly repository: Repository;
   readonly backend: ReviewBackend;
   readonly store: ThreadStore;
   readonly cssText: string;
@@ -159,7 +161,7 @@ function renderView(
       locale={locale}
       layout={layout}
       renderDiagram={context.renderDiagram}
-      imageSource={githubImageSource(container)}
+      imageSource={githubImageSource(container, context.repository)}
       hostViewSwitch={{
         label: t.showGitHubView,
         description: t.showGitHubViewDescription,

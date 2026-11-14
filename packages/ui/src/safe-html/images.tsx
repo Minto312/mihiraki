@@ -1,14 +1,29 @@
+import type { CommitId } from "@mihiraki/core";
 import type { ComponentChildren } from "preact";
 import { createContext } from "preact";
 import { useContext, useMemo, useState } from "preact/hooks";
 import type { SanitizedHtml } from "./sanitize";
 
+/** The commit and path of the version of the reviewed file that an image appears in. */
+export interface DocumentVersion {
+  readonly commit: CommitId;
+  readonly path: string;
+}
+
+/** The version shown on each side; null for a side the file does not exist on. */
+export interface DocumentVersions {
+  readonly base: DocumentVersion | null;
+  readonly head: DocumentVersion | null;
+}
+
 /**
  * How the host lets an image of the reviewed Markdown load: the URL to load it from (e.g.
  * the host's own image proxy), or null to hold it back until the reviewer asks for it. A PR
  * author could otherwise learn who opened the file, and from where, with a tracking image.
+ * `version` is the version of the file the image is in, which a relative path is relative
+ * to; null when it is not known.
  */
-export type ImageSource = (src: string) => string | null;
+export type ImageSource = (src: string, version: DocumentVersion | null) => string | null;
 
 export interface ImagePolicy {
   readonly resolve: ImageSource;
@@ -49,6 +64,15 @@ export function useImagePolicy(): ImagePolicyState | null {
   return useContext(ImagePolicyContext);
 }
 
+const DocumentVersionsContext = createContext<DocumentVersions | null>(null);
+
+/** Tells the rendered blocks which version of the file each side shows. */
+export const DocumentVersionsProvider = DocumentVersionsContext.Provider;
+
+export function useDocumentVersions(): DocumentVersions | null {
+  return useContext(DocumentVersionsContext);
+}
+
 /** Marks the button that stands in for a held-back image; it carries the image's address. */
 export const HELD_IMAGE_ATTR = "data-mhr-src";
 
@@ -62,13 +86,15 @@ function hostOf(src: string): string {
 
 /**
  * Applies the policy to sanitised HTML: each image loads from the host's URL for it, or is
- * replaced by a button naming its site. Only attributes are removed and a plain button with
- * text is added, so the result is still safe to insert.
+ * replaced by a button naming its site. `version` is the version of the file the HTML was
+ * rendered from. Only attributes are removed and a plain button with text is added, so the
+ * result is still safe to insert.
  */
 export function holdImages(
   html: SanitizedHtml,
   policy: ImagePolicy,
   label: (host: string) => string,
+  version: DocumentVersion | null,
 ): SanitizedHtml {
   const template = document.createElement("template");
   template.innerHTML = html;
@@ -79,7 +105,7 @@ export function holdImages(
     image.removeAttribute("srcset");
     const src = image.getAttribute("src");
     if (!src || policy.allowed.has(src)) continue;
-    const resolved = policy.resolve(src);
+    const resolved = policy.resolve(src, version);
     if (resolved !== null) {
       image.setAttribute("src", resolved);
       continue;

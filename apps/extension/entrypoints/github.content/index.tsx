@@ -17,6 +17,7 @@ async function startReview(pr: PullRequestLocation): Promise<Result<() => void, 
   });
   return startInlineReview({
     document,
+    repository: pr,
     backend,
     cssText: inheritHostThemeColors(cssText),
     hostSync,
