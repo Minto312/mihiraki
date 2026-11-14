@@ -8,7 +8,8 @@ import {
 } from "@mihiraki/core";
 import { extractBlobSource, findBlobSource } from "./blob-source";
 import { asArray, asRecord, asString, type JsonRecord, pick } from "./json";
-import { fileUrl, type PullRequestLocation, pullRequestUrl } from "./pr-location";
+import { type PullRequestLocation, pullRequestUrl } from "./pr-location";
+import { fileUrl } from "./repository";
 import {
   HttpStatusError,
   NetworkError,

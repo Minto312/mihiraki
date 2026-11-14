@@ -7,7 +7,7 @@ import {
   type ThreadStore,
 } from "@mihiraki/ui";
 import { render } from "preact";
-import type { Repository } from "../github/pr-location";
+import type { Repository } from "../github/repository";
 import {
   insertBelowHeader,
   isRichDiffShown,

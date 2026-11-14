@@ -1,5 +1,5 @@
 import type { ImageSource } from "@mihiraki/ui";
-import { encodePath, fileUrl, type Repository } from "../github/pr-location";
+import { encodePath, fileUrl, type Repository } from "../github/repository";
 
 /** GitHub's own rich diff marks each proxied image with the address it was written with. */
 const PROXIED_IMAGE = "img[data-canonical-src]";

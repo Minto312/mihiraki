@@ -11,7 +11,7 @@ import {
   type DiffLayout,
   type Locale,
 } from "@mihiraki/ui";
-import type { Repository } from "../github/pr-location";
+import type { Repository } from "../github/repository";
 import type { HostSyncClient } from "../host-sync/client";
 import { watchDocument } from "./document-watch";
 import { fileContainerId } from "./file-anchor";
