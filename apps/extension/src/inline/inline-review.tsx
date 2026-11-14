@@ -11,6 +11,7 @@ import {
   type DiffLayout,
   type Locale,
 } from "@mihiraki/ui";
+import type { Repository } from "../github/repository";
 import type { HostSyncClient } from "../host-sync/client";
 import { watchDocument } from "./document-watch";
 import { fileContainerId } from "./file-anchor";
@@ -20,6 +21,8 @@ import { INLINE_MESSAGES } from "./messages";
 
 export interface InlineReviewOptions {
   readonly document: Document;
+  /** The repository of the pull request; relative image paths of its files load from it. */
+  readonly repository: Repository;
   readonly backend: ReviewBackend;
   /** Stylesheet of the view, injected into each view's shadow root. */
   readonly cssText: string;
@@ -125,7 +128,7 @@ function restoreAll(document: Document, targets: readonly FileTarget[]) {
 export async function startInlineReview(
   options: InlineReviewOptions,
 ): Promise<Result<() => void, HostError>> {
-  const { document, backend, cssText, hostSync, renderDiagram } = options;
+  const { document, repository, backend, cssText, hostSync, renderDiagram } = options;
   let layout = options.initialLayout;
   let locale = options.locale;
   const located = await locateFiles(backend);
@@ -139,6 +142,7 @@ export async function startInlineReview(
 
   const decorator = createFileDecorator({
     document,
+    repository,
     backend,
     store,
     cssText,

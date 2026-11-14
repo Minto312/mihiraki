@@ -28,7 +28,12 @@ export function SplitCellView({ side, cell, kind, threads, ...blockProps }: Spli
   return (
     <div class={`mhr-cell mhr-cell--${cell ? kind : "empty"}`} data-side={side}>
       {cell && (
-        <RenderedBlock html={cell.html} isDiagram={cell.block.kind === "diagram"} {...blockProps} />
+        <RenderedBlock
+          html={cell.html}
+          side={side}
+          isDiagram={cell.block.kind === "diagram"}
+          {...blockProps}
+        />
       )}
       <ThreadList threads={threads} />
     </div>

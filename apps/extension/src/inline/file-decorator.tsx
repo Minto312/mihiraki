@@ -7,6 +7,7 @@ import {
   type ThreadStore,
 } from "@mihiraki/ui";
 import { render } from "preact";
+import type { Repository } from "../github/repository";
 import {
   insertBelowHeader,
   isRichDiffShown,
@@ -21,6 +22,8 @@ import { createShadowHost, type ShadowHost } from "./shadow-host";
 
 export interface FileDecoratorContext {
   readonly document: Document;
+  /** The repository of the pull request; relative image paths of its files load from it. */
+  readonly repository: Repository;
   readonly backend: ReviewBackend;
   readonly store: ThreadStore;
   readonly cssText: string;
@@ -159,7 +162,7 @@ function renderView(
       locale={locale}
       layout={layout}
       renderDiagram={context.renderDiagram}
-      imageSource={githubImageSource(container)}
+      imageSource={githubImageSource(container, context.repository)}
       hostViewSwitch={{
         label: t.showGitHubView,
         description: t.showGitHubViewDescription,

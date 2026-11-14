@@ -9,6 +9,7 @@ import {
 import { extractBlobSource, findBlobSource } from "./blob-source";
 import { asArray, asRecord, asString, type JsonRecord, pick } from "./json";
 import { type PullRequestLocation, pullRequestUrl } from "./pr-location";
+import { fileUrl } from "./repository";
 import {
   HttpStatusError,
   NetworkError,
@@ -58,10 +59,6 @@ function jsonRequest(method: string, payload: unknown): RequestInit {
 const LINE_NOT_RESOLVED = /line could not be resolved/i;
 const RETRY_DELAY_MS = 400;
 
-function encodePath(path: string): string {
-  return path.split("/").map(encodeURIComponent).join("/");
-}
-
 async function readErrorMessage(response: Response): Promise<string> {
   const text = await response.text().catch(() => "");
   try {
@@ -92,10 +89,6 @@ export async function fetchRouteData(
     throw new UnexpectedResponseError("pull request route data is not JSON");
   });
   return parseRouteData(json);
-}
-
-function fileUrl(pr: PullRequestLocation, route: "blob" | "_styled", oid: CommitId, path: string) {
-  return `https://github.com/${encodeURIComponent(pr.owner)}/${encodeURIComponent(pr.repo)}/${route}/${oid}/${encodePath(path)}`;
 }
 
 /** Source from the small JSON GitHub's code view loads for a file, or null if it has none. */

@@ -1,6 +1,6 @@
-export interface PullRequestLocation {
-  readonly owner: string;
-  readonly repo: string;
+import type { Repository } from "./repository";
+
+export interface PullRequestLocation extends Repository {
   readonly number: number;
 }
 
