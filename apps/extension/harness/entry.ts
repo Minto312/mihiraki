@@ -29,7 +29,7 @@ if (pr) {
   window.mihiraki = backend.diffLayout().then((layout) =>
     startInlineReview({
       document,
-      repository: pr,
+      repository: { owner: pr.owner, repo: pr.repo },
       backend,
       cssText: inheritHostThemeColors(cssText),
       hostSync,
