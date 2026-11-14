@@ -7,6 +7,7 @@ import {
   type ThreadStore,
 } from "@mihiraki/ui";
 import { render } from "preact";
+import type { Repository } from "../github/pr-location";
 import {
   insertBelowHeader,
   isRichDiffShown,
@@ -15,13 +16,13 @@ import {
   setRenderedViewActive,
   viewSlotOf,
 } from "./github-file-dom";
-import { githubImageSource, imageKeyOf, type Repository } from "./github-images";
+import { githubImageSource, imageKeyOf } from "./github-images";
 import { INLINE_MESSAGES } from "./messages";
 import { createShadowHost, type ShadowHost } from "./shadow-host";
 
 export interface FileDecoratorContext {
   readonly document: Document;
-  /** The repository of the pull request, which relative image paths point into. */
+  /** The repository of the pull request; relative image paths of its files load from it. */
   readonly repository: Repository;
   readonly backend: ReviewBackend;
   readonly store: ThreadStore;

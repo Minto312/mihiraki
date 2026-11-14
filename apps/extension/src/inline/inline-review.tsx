@@ -11,17 +11,17 @@ import {
   type DiffLayout,
   type Locale,
 } from "@mihiraki/ui";
+import type { Repository } from "../github/pr-location";
 import type { HostSyncClient } from "../host-sync/client";
 import { watchDocument } from "./document-watch";
 import { fileContainerId } from "./file-anchor";
 import { createFileDecorator } from "./file-decorator";
 import { installPageStyle, removePageStyle, setRenderedViewActive } from "./github-file-dom";
-import type { Repository } from "./github-images";
 import { INLINE_MESSAGES } from "./messages";
 
 export interface InlineReviewOptions {
   readonly document: Document;
-  /** The repository of the pull request, which relative image paths point into. */
+  /** The repository of the pull request; relative image paths of its files load from it. */
   readonly repository: Repository;
   readonly backend: ReviewBackend;
   /** Stylesheet of the view, injected into each view's shadow root. */

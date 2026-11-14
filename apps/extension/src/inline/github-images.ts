@@ -1,10 +1,5 @@
-import type { DocumentVersion, ImageSource } from "@mihiraki/ui";
-
-/** The repository whose files are reviewed. */
-export interface Repository {
-  readonly owner: string;
-  readonly repo: string;
-}
+import type { ImageSource } from "@mihiraki/ui";
+import { encodePath, fileUrl, type Repository } from "../github/pr-location";
 
 /** GitHub's own rich diff marks each proxied image with the address it was written with. */
 const PROXIED_IMAGE = "img[data-canonical-src]";
@@ -32,22 +27,29 @@ function urlOf(src: string, base: string): URL | null {
  */
 const REPOSITORY_ROOT = "https://repository.invalid/";
 
-function encodePath(path: string): string {
-  return path.split("/").map(encodeURIComponent).join("/");
+interface RepositoryTarget {
+  /** Path of the repository's file, not percent-encoded. */
+  readonly path: string;
+  /** The query and fragment `src` gave, kept as written. */
+  readonly rest: string;
 }
 
 /**
- * The address GitHub serves a file of the repository at, for a path relative to the file
- * `version.path` at commit `version.commit`, as GitHub loads relative images in its own
- * rendering of a Markdown file. Null when `src` is not a path (it names a scheme or a host,
- * including with backslashes, which URLs read as slashes).
+ * Where `src` points in the repository, read as a path from the file at `filePath`, as
+ * GitHub reads relative images in its own rendering of a Markdown file. Null when `src` is
+ * not such a path: it names a scheme or a host (including with backslashes, which URLs read
+ * as slashes), or its percent-encoding is malformed.
  */
-function rawFileUrl(repository: Repository, version: DocumentVersion, src: string): string | null {
+function resolveInRepository(src: string, filePath: string): RepositoryTarget | null {
   const root = new URL(REPOSITORY_ROOT);
-  const target = urlOf(src, new URL(encodePath(version.path), root).href);
+  const target = urlOf(src, new URL(encodePath(filePath), root).href);
   if (target?.origin !== root.origin) return null;
-  const { owner, repo } = repository;
-  return `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/raw/${version.commit}${target.pathname}${target.search}${target.hash}`;
+  try {
+    const path = target.pathname.slice(1).split("/").map(decodeURIComponent).join("/");
+    return { path, rest: `${target.search}${target.hash}` };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -56,13 +58,15 @@ function rawFileUrl(repository: Repository, version: DocumentVersion, src: strin
  * it (including data URIs); through the proxied address GitHub gave the same image in its
  * own rich diff of this file otherwise; or held back when there is none, as GitHub never
  * loads a third-party image straight from the reader's browser. What decides is the address
- * `src` resolves to, not how it is written: `/\\example.com/a.png` is another site's image.
+ * `src` resolves to, not how it is written: `/\example.com/a.png` is another site's image.
  */
 export function githubImageSource(container: Element, repository: Repository): ImageSource {
   const base = container.ownerDocument.baseURI;
   return (src, version) => {
-    const inRepository = version && rawFileUrl(repository, version, src);
-    if (inRepository) return inRepository;
+    if (version) {
+      const target = resolveInRepository(src, version.path);
+      if (target) return `${fileUrl(repository, "raw", version.commit, target.path)}${target.rest}`;
+    }
     const url = urlOf(src, base);
     if (!url) return null;
     if (url.protocol === "data:" || isGitHubHost(url.host)) return url.href;
